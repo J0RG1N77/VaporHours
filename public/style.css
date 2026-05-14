@@ -1,0 +1,238 @@
+/* =========================
+   Variaveis (Design System)
+   ========================= */
+:root {
+    --color-background-dark: #08111a;
+    --color-background-deep: #02070d;
+    --color-card-primary: #0f1a24;
+    --color-card-secondary: #0a131c;
+    --color-border-soft: rgba(255, 255, 255, 0.08);
+    --color-border-focus: rgba(66, 156, 245, 0.55);
+    --color-text-primary: #e8f0f7;
+    --color-text-secondary: #99a9b8;
+    --color-steam-blue: #1b7fdb;
+    --color-steam-blue-hover: #2a90ee;
+    --color-steam-blue-active: #1670c4;
+    --color-steam-red: #b64242;
+    --color-steam-red-hover: #cb4c4c;
+    --color-steam-red-active: #9d3737;
+    --color-shadow-card: rgba(2, 8, 16, 0.58);
+    --color-shadow-focus: rgba(27, 127, 219, 0.22);
+
+    --radius-card: 12px;
+    --radius-control: 8px;
+
+    --space-1: 6px;
+    --space-2: 10px;
+    --space-3: 14px;
+    --space-4: 18px;
+    --space-5: 24px;
+
+    --font-main: "Bahnschrift", "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+/* =====
+   Reset
+   ===== */
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+
+    font-family: var(--font-main);
+    color: var(--color-text-primary);
+
+    background: radial-gradient(circle at 12% 8%, #102637 0%, transparent 52%),
+        linear-gradient(180deg, var(--color-background-dark) 0%, var(--color-background-deep) 100%);
+}
+
+/* ======
+   Layout
+   ====== */
+/* Container principal da aplicacao */
+.app-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 100vh;
+    padding: 48px var(--space-3) var(--space-3);
+}
+
+/* Card central com os controles do farm */
+.main-card {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-card);
+
+    background: linear-gradient(160deg, var(--color-card-primary) 0%, var(--color-card-secondary) 100%);
+    box-shadow: 0 18px 34px var(--color-shadow-card);
+}
+
+/* ===========
+   Componentes
+   =========== */
+/* Titulo principal do painel */
+.title {
+    margin: 0 0 var(--space-4);
+
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+/* Label do campo AppID */
+.label {
+    display: block;
+    margin-bottom: var(--space-1);
+
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.2px;
+}
+
+/* Campo de entrada do AppID */
+.input-field {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-control);
+
+    font-size: 15px;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+
+    background: rgba(255, 255, 255, 0.03);
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.input-field:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-shadow-focus);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Linha com botao e status da Steam */
+.actions-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    margin-top: var(--space-3);
+}
+
+/* Estilizacao dos botoes de acao */
+.btn-start,
+.btn-stop {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 86px;
+    padding: 11px 16px;
+    border: 0;
+    border-radius: var(--radius-control);
+
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+
+    cursor: pointer;
+    transition: transform 120ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.btn-start {
+    background: linear-gradient(180deg, var(--color-steam-blue-hover) 0%, var(--color-steam-blue) 100%);
+}
+
+.btn-start:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 6px 14px rgba(27, 127, 219, 0.35);
+}
+
+.btn-start:active {
+    transform: translateY(1px);
+    filter: brightness(0.95);
+    background: var(--color-steam-blue-active);
+}
+
+.btn-stop {
+    background: linear-gradient(180deg, var(--color-steam-red-hover) 0%, var(--color-steam-red) 100%);
+}
+
+.btn-stop:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 6px 14px rgba(182, 66, 66, 0.35);
+}
+
+.btn-stop:active {
+    transform: translateY(1px);
+    filter: brightness(0.95);
+    background: var(--color-steam-red-active);
+}
+
+/* Texto de status da deteccao da Steam */
+.status-label {
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+/* Mensagens de operacao (sucesso/erro) */
+.hint-text {
+    min-height: 18px;
+    margin-top: var(--space-2);
+
+    font-size: 12px;
+    color: #c9d7e4;
+    opacity: 0.92;
+}
+
+/* Cronometro de tempo de farm */
+.timer-text {
+    margin-top: var(--space-4);
+
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.2px;
+}
+
+/* =============
+   Responsividade
+   ============= */
+@media (max-width: 420px) {
+    .app-container {
+        padding-top: 28px;
+    }
+
+    .main-card {
+        padding: var(--space-4);
+        border-radius: 10px;
+    }
+
+    .title {
+        font-size: 28px;
+    }
+
+    .actions-row {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+}
+
+/* ================
+   Ninguem vai ler isso =D
+   ============= */

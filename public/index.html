@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+		<link rel="stylesheet" href="style.css" />
+		<title>VaporHours</title>
+	</head>
+	<body>
+		<main class="app-container">
+			<section class="main-card" aria-label="Painel principal do farm de horas">
+				<h1 class="title">VaporHours</h1>
+				<label class="label" for="appid">AppID</label>
+				<input class="input-field" id="appid" type="text" placeholder="Ex: 570" />
+				<div class="actions-row">
+					<button class="btn-start" id="startBtn">Start</button>
+					<div class="status-label">Steam Detectada: <span id="steamStatus">Não</span></div>
+				</div>
+				<div class="hint-text" id="hint"></div>
+				<div class="timer-text">Tempo: <span id="timer">00:00:00</span></div>
+			</section>
+		</main>
+
+		<script src="renderer.js"></script>
+	</body>
+</html>
