@@ -187,8 +187,8 @@ startBtn.addEventListener('click', async () => {
   // enquanto o main process limpa a sessao e encerra o app.
   isRestarting = true;
   running = false;
-  startBtn.textContent = 'Encerrando sessão...';
-  hint.textContent = 'Encerrando sessão...';
+  startBtn.textContent = 'Encerrando farm...';
+  hint.textContent = 'Encerrando farm...';
   setButtonMode(false);
   setControlsDisabled(true);
 
@@ -197,29 +197,8 @@ startBtn.addEventListener('click', async () => {
     stopTimer();
     localPlayerName = 'Nao';
     activeGame = null;
-    
-    // Opcional: mostre detalhes da limpeza quando o main enviar.
-    let shutdownInfo = 'Encerrando...\n\n';
-    if (stop.shutdownDiag) {
-      shutdownInfo += `Shutdown:\n`;
-      shutdownInfo += `- hadClient: ${stop.shutdownDiag.hadClient}\n`;
-      shutdownInfo += `- hadShutdownMethod: ${stop.shutdownDiag.hadShutdownMethod}\n`;
-      shutdownInfo += `- shutdownCalled: ${stop.shutdownDiag.shutdownCalled}\n`;
-      shutdownInfo += `- error: ${stop.shutdownDiag.error}\n\n`;
-    }
-    if (stop.deleted && stop.deleted.length) {
-      shutdownInfo += `Arquivos removidos: ${stop.deleted.length}\n`;
-    }
-    hint.textContent = shutdownInfo;
-    
-    const unsub = window.vaporHours.onStopResults((info) => {
-      if (info && info.deleted && info.deleted.length) {
-        hint.textContent = `Arquivos removidos: ${info.deleted.length}`;
-      } else if (info && info.deleteErrors && info.deleteErrors.length) {
-        hint.textContent = `Erro ao remover arquivos: ${info.deleteErrors[0].error}`;
-      }
-      unsub();
-    });
+
+    hint.textContent = 'Encerrando farm...';
 
     return;
   }
