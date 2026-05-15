@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
+let loggedSteamContext = null;
+let loggedSteamContextPromise = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -27,6 +29,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  primeLoggedSteamContext().catch(() => {});
   createWindow();
 
   app.on('activate', function () {
@@ -61,6 +64,98 @@ function normalizeSteamWebApiGames(games) {
     appId: Number(game && game.appid),
     name: String(game && game.name ? game.name : '').trim(),
   })));
+}
+
+function getSteamworksClient() {
+  const steamworks = require('steamworks.js');
+
+  if (!steamworks || typeof steamworks.init !== 'function') {
+    throw new Error('steamworks.js nao reconhecida.');
+  }
+
+  return steamworks;
+}
+
+function formatPlayerSteamId(localSteamId) {
+  if (!localSteamId) return '';
+
+  if (typeof localSteamId.asString === 'function') {
+    return String(localSteamId.asString()).trim();
+  }
+
+  if (localSteamId.steamId64) {
+    return String(localSteamId.steamId64).trim();
+  }
+
+  if (localSteamId.steamId32) {
+    return String(localSteamId.steamId32).trim();
+  }
+
+  return '';
+}
+
+function primeLoggedSteamContext() {
+  if (!loggedSteamContextPromise) {
+    loggedSteamContextPromise = getLoggedSteamContext().catch((err) => {
+      loggedSteamContextPromise = null;
+      throw err;
+    });
+  }
+
+  return loggedSteamContextPromise;
+}
+
+async function getLoggedSteamContext() {
+  if (loggedSteamContext) return loggedSteamContext;
+  if (loggedSteamContextPromise) return loggedSteamContextPromise;
+
+  loggedSteamContextPromise = (async () => {
+    const steamworks = getSteamworksClient();
+    const client = steamworks.init(480);
+
+    const localSteamId = client && client.localplayer && typeof client.localplayer.getSteamId === 'function'
+      ? client.localplayer.getSteamId()
+      : null;
+
+    const steamId = formatPlayerSteamId(localSteamId);
+
+    if (!steamId) {
+      throw new Error('Nao foi possivel detectar o SteamID local.');
+    }
+
+    if (typeof steamworks.shutdown === 'function') {
+      steamworks.shutdown();
+    }
+
+    loggedSteamContext = { steamId };
+    return loggedSteamContext;
+  })().finally(() => {
+    loggedSteamContextPromise = null;
+  });
+
+  return loggedSteamContextPromise;
+}
+
+async function getSteamPersonaName(steamId) {
+  const steamWebKey = process.env.STEAM_WEB_KEY;
+
+  if (!steamWebKey) {
+    throw new Error('STEAM_WEB_KEY nao configurado.');
+  }
+
+  const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${encodeURIComponent(steamWebKey)}&steamids=${encodeURIComponent(steamId)}`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Steam Web API respondeu com status ${response.status}.`);
+  }
+
+  const payload = await response.json();
+  const player = payload && payload.response && Array.isArray(payload.response.players)
+    ? payload.response.players[0]
+    : null;
+
+  return player && player.personaname ? String(player.personaname).trim() : '';
 }
 
 // Invalidação de sessão por artefato: removemos qualquer steam_appid.txt
@@ -152,13 +247,14 @@ function writeSteamAppId(appid) {
 ipcMain.handle('get-library', async () => {
   try {
     const steamWebKey = process.env.STEAM_WEB_KEY;
-    const steamId = process.env.STEAM_ID;
 
-    if (!steamWebKey || !steamId) {
-      throw new Error('STEAM_WEB_KEY ou STEAM_ID nao configurados.');
+    if (!steamWebKey) {
+      throw new Error('STEAM_WEB_KEY nao configurado.');
     }
 
-    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${encodeURIComponent(steamWebKey)}&steamid=${encodeURIComponent(steamId)}&format=json&include_appinfo=true`;
+    const { steamId } = await getLoggedSteamContext();
+
+    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${encodeURIComponent(steamWebKey)}&steamid=${encodeURIComponent(steamId)}&format=json&include_appinfo=true&include_played_free_games=true`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -172,6 +268,21 @@ ipcMain.handle('get-library', async () => {
   } catch (err) {
     const message = err && err.message ? err.message : 'Nao foi possivel carregar a biblioteca Steam.';
     return { success: false, error: message, games: [] };
+  }
+});
+
+ipcMain.handle('get-steam-user', async () => {
+  try {
+    const { steamId } = await getLoggedSteamContext();
+    const personaName = await getSteamPersonaName(steamId);
+    return {
+      success: true,
+      steamId,
+      personaName,
+    };
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Nao foi possivel carregar o usuario Steam.';
+    return { success: false, error: message, personaName: '' };
   }
 });
 

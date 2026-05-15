@@ -10,6 +10,7 @@ let seconds = 0;
 let interval = null;
 let isRestarting = false;
 let localPlayerName = 'Nao';
+let steamPersonaName = 'Nao';
 let activeGame = null;
 
 function setControlsDisabled(disabled) {
@@ -121,6 +122,23 @@ async function loadMyGames() {
   libraryHint.textContent = `Falha ao carregar biblioteca: ${error}`;
 }
 
+async function loadSteamUser() {
+  const result = await window.vaporHours.getSteamUser();
+
+  if (result && result.success && result.personaName) {
+    steamPersonaName = result.personaName;
+    if (!running) {
+      steamStatus.textContent = steamPersonaName;
+    }
+    return;
+  }
+
+  steamPersonaName = 'Nao';
+  if (!running) {
+    steamStatus.textContent = 'Nao';
+  }
+}
+
 async function startGame(game) {
   if (!game || isRestarting || running) return;
 
@@ -215,10 +233,11 @@ startBtn.addEventListener('click', async () => {
 });
 
 window.vaporHours.onSteamStatus((ok) => {
-  steamStatus.textContent = ok ? localPlayerName : 'Não';
+  steamStatus.textContent = ok ? localPlayerName : steamPersonaName;
 });
 
 setButtonMode(false);
 startBtn.disabled = true;
 gamesGrid.classList.remove('is-disabled');
 loadMyGames();
+loadSteamUser();

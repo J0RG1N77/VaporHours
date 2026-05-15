@@ -5,6 +5,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('vaporHours', {
   getLibrary: () => ipcRenderer.invoke('get-library'),
   getMyGames: () => ipcRenderer.invoke('get-library'),
+  getSteamUser: () => ipcRenderer.invoke('get-steam-user'),
   startFarm: (appid) => ipcRenderer.invoke('start-farm', appid),
   stopFarm: () => ipcRenderer.invoke('stop-farm'),
   onSteamStatus: (callback) => {
