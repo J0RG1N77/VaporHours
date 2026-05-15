@@ -6,8 +6,10 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 420,
-    height: 320,
+    width: 1280,
+    height: 720,
+    minWidth: 640,
+    minHeight: 500,
     resizable: false,
     webPreferences: {
       // Modo seguro de produção:
