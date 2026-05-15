@@ -14,4 +14,12 @@ contextBridge.exposeInMainWorld('vaporHours', {
     // Permite remover listener para evitar leaks.
     return () => ipcRenderer.removeListener('steam-status', listener);
   },
+  onStopResults: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+
+    const listener = (_, info) => callback(info);
+    ipcRenderer.on('stop-results', listener);
+
+    return () => ipcRenderer.removeListener('stop-results', listener);
+  },
 });

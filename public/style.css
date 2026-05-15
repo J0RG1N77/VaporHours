@@ -13,9 +13,9 @@
     --color-steam-blue: #1b7fdb;
     --color-steam-blue-hover: #2a90ee;
     --color-steam-blue-active: #1670c4;
-    --color-steam-red: #b64242;
-    --color-steam-red-hover: #cb4c4c;
-    --color-steam-red-active: #9d3737;
+    --color-steam-red: #c43f3f;
+    --color-steam-red-hover: #e55252;
+    --color-steam-red-active: #a93434;
     --color-shadow-card: rgba(2, 8, 16, 0.58);
     --color-shadow-focus: rgba(27, 127, 219, 0.22);
 
@@ -167,6 +167,7 @@ body {
 }
 
 .btn-stop {
+    border: 1px solid rgba(255, 255, 255, 0.14);
     background: linear-gradient(180deg, var(--color-steam-red-hover) 0%, var(--color-steam-red) 100%);
 }
 
@@ -179,6 +180,15 @@ body {
     transform: translateY(1px);
     filter: brightness(0.95);
     background: var(--color-steam-red-active);
+}
+
+.btn-start:disabled,
+.btn-stop:disabled,
+.input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 
 /* Texto de status da deteccao da Steam */
