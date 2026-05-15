@@ -7,6 +7,7 @@ const fs = require('fs');
 let mainWindow;
 let loggedSteamContext = null;
 let loggedSteamContextPromise = null;
+let steamworksRuntime = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -66,32 +67,74 @@ function normalizeSteamWebApiGames(games) {
   })));
 }
 
-function getSteamworksClient() {
-  const steamworks = require('steamworks.js');
+function getSteamLoginUserFileCandidates() {
+  const steamRoots = [
+    process.env['PROGRAMFILES(X86)'] && path.join(process.env['PROGRAMFILES(X86)'], 'Steam'),
+    process.env.PROGRAMFILES && path.join(process.env.PROGRAMFILES, 'Steam'),
+    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Steam'),
+    'C:\\Program Files (x86)\\Steam',
+    'C:\\Program Files\\Steam',
+  ].filter(Boolean);
 
-  if (!steamworks || typeof steamworks.init !== 'function') {
-    throw new Error('steamworks.js nao reconhecida.');
-  }
-
-  return steamworks;
+  return [...new Set(steamRoots.map((steamRoot) => path.join(steamRoot, 'config', 'loginusers.vdf')))];
 }
 
-function formatPlayerSteamId(localSteamId) {
-  if (!localSteamId) return '';
+function readVdfQuotedValue(content, key) {
+  const pattern = new RegExp(`"${key}"\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i');
+  const match = content.match(pattern);
 
-  if (typeof localSteamId.asString === 'function') {
-    return String(localSteamId.asString()).trim();
+  if (!match) return '';
+
+  return match[1]
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+    .trim();
+}
+
+function parseLoggedSteamContextFromLoginUsers(content) {
+  const userBlocks = [...content.matchAll(/"(\d{17})"\s*\{([\s\S]*?)\}/g)];
+
+  if (!userBlocks.length) {
+    throw new Error('Nao foi possivel encontrar contas no loginusers.vdf.');
   }
 
-  if (localSteamId.steamId64) {
-    return String(localSteamId.steamId64).trim();
+  const accounts = userBlocks.map((match) => {
+    const steamId = String(match[1]).trim();
+    const block = String(match[2] || '');
+
+    return {
+      steamId,
+      personaName: readVdfQuotedValue(block, 'PersonaName') || readVdfQuotedValue(block, 'AccountName') || '',
+      mostRecent: readVdfQuotedValue(block, 'MostRecent') === '1',
+      timestamp: Number(readVdfQuotedValue(block, 'Timestamp') || 0),
+    };
+  });
+
+  const mostRecentAccount = accounts.find((account) => account.mostRecent)
+    || accounts.sort((left, right) => right.timestamp - left.timestamp)[0];
+
+  if (!mostRecentAccount || !mostRecentAccount.steamId) {
+    throw new Error('Nao foi possivel detectar a conta Steam logada.');
   }
 
-  if (localSteamId.steamId32) {
-    return String(localSteamId.steamId32).trim();
+  return {
+    steamId: mostRecentAccount.steamId,
+    personaName: mostRecentAccount.personaName,
+  };
+}
+
+function readLoggedSteamContextFromDisk() {
+  const candidates = getSteamLoginUserFileCandidates();
+  const existingFile = candidates.find((candidate) => fs.existsSync(candidate));
+
+  if (!existingFile) {
+    throw new Error('Nao foi possivel localizar o arquivo loginusers.vdf da Steam.');
   }
 
-  return '';
+  const content = fs.readFileSync(existingFile, 'utf8');
+  return parseLoggedSteamContextFromLoginUsers(content);
 }
 
 function primeLoggedSteamContext() {
@@ -109,27 +152,11 @@ async function getLoggedSteamContext() {
   if (loggedSteamContext) return loggedSteamContext;
   if (loggedSteamContextPromise) return loggedSteamContextPromise;
 
-  loggedSteamContextPromise = (async () => {
-    const steamworks = getSteamworksClient();
-    const client = steamworks.init(480);
-
-    const localSteamId = client && client.localplayer && typeof client.localplayer.getSteamId === 'function'
-      ? client.localplayer.getSteamId()
-      : null;
-
-    const steamId = formatPlayerSteamId(localSteamId);
-
-    if (!steamId) {
-      throw new Error('Nao foi possivel detectar o SteamID local.');
-    }
-
-    if (typeof steamworks.shutdown === 'function') {
-      steamworks.shutdown();
-    }
-
-    loggedSteamContext = { steamId };
+  loggedSteamContextPromise = Promise.resolve().then(() => {
+    const context = readLoggedSteamContextFromDisk();
+    loggedSteamContext = context;
     return loggedSteamContext;
-  })().finally(() => {
+  }).finally(() => {
     loggedSteamContextPromise = null;
   });
 
@@ -187,14 +214,13 @@ function shutdownSteamClient() {
   };
 
   try {
-    const steamworks = require('steamworks.js');
-    if (typeof steamworks.shutdown === 'function') {
-      steamworks.shutdown();
+    if (steamworksRuntime && typeof steamworksRuntime.shutdown === 'function') {
+      steamworksRuntime.shutdown();
       shutdownDiag.hadShutdownMethod = true;
       shutdownDiag.shutdownCalled = true;
       console.log('steamworks.shutdown() executado com sucesso');
     } else {
-      console.warn('steamworks nao tem metodo shutdown. Disponíveis:', Object.keys(steamworks || {}));
+      console.warn('steamworks nao tem metodo shutdown.');
     }
   } catch (e) {
     shutdownDiag.error = e && e.message ? e.message : String(e);
@@ -317,6 +343,7 @@ ipcMain.handle('start-farm', async (_, appid) => {
     };
     try {
       const steamworks = require('steamworks.js');
+      steamworksRuntime = steamworks;
       try { diag.exports = Object.keys(steamworks); } catch (e) { diag.exports = String(e && e.message); }
 
       // Tentativa de chamar restartAppIfNecessary (pode reiniciar o Steam/processo)
