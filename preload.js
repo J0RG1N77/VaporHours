@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Bridge segura: expomos apenas os métodos estritamente necessários.
 // O renderer não acessa `ipcRenderer` diretamente.
 contextBridge.exposeInMainWorld('vaporHours', {
+  getLibrary: () => ipcRenderer.invoke('get-library'),
+  getMyGames: () => ipcRenderer.invoke('get-library'),
   startFarm: (appid) => ipcRenderer.invoke('start-farm', appid),
   stopFarm: () => ipcRenderer.invoke('stop-farm'),
   onSteamStatus: (callback) => {

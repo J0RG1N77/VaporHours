@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -6,11 +8,11 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
-    minWidth: 640,
-    minHeight: 500,
-    resizable: false,
+    width: 1440,
+    height: 900,
+    minWidth: 1100,
+    minHeight: 760,
+    resizable: true,
     webPreferences: {
       // Modo seguro de produção:
       // - renderer sem acesso direto ao Node.js
@@ -34,6 +36,32 @@ app.whenReady().then(() => {
 
 // Guarda a instância do cliente Steam (se inicializada)
 let steamClient = null;
+
+function normalizeGameList(gameList) {
+  if (!Array.isArray(gameList)) return [];
+
+  return gameList
+    .map((game) => {
+      const appId = Number(game && game.appId);
+      const name = String(game && game.name ? game.name : '').trim();
+
+      if (!Number.isInteger(appId) || appId <= 0) return null;
+
+      return {
+        appId,
+        name: name || `App ${appId}`,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' }));
+}
+
+function normalizeSteamWebApiGames(games) {
+  return normalizeGameList(games.map((game) => ({
+    appId: Number(game && game.appid),
+    name: String(game && game.name ? game.name : '').trim(),
+  })));
+}
 
 // Invalidação de sessão por artefato: removemos qualquer steam_appid.txt
 // remanescente antes de iniciar para que a execução sempre comece limpa.
@@ -120,6 +148,32 @@ function writeSteamAppId(appid) {
 
   return { written, errors };
 }
+
+ipcMain.handle('get-library', async () => {
+  try {
+    const steamWebKey = process.env.STEAM_WEB_KEY;
+    const steamId = process.env.STEAM_ID;
+
+    if (!steamWebKey || !steamId) {
+      throw new Error('STEAM_WEB_KEY ou STEAM_ID nao configurados.');
+    }
+
+    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${encodeURIComponent(steamWebKey)}&steamid=${encodeURIComponent(steamId)}&format=json&include_appinfo=true`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Steam Web API respondeu com status ${response.status}.`);
+    }
+
+    const payload = await response.json();
+    const games = normalizeSteamWebApiGames((payload && payload.response && payload.response.games) || []);
+
+    return { success: true, games };
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Nao foi possivel carregar a biblioteca Steam.';
+    return { success: false, error: message, games: [] };
+  }
+});
 
 /**
  * IPC: Recebe pedido para iniciar o "farm".
@@ -251,11 +305,10 @@ ipcMain.handle('stop-farm', () => {
       }
     }
 
-    // Encerramos de fato o processo para que a Steam marque a sessão como parada.
-    // O relaunch imediato mantinha o jogo em execução, então o Stop agora apenas fecha.
+    // Encerramos o processo de fato para que a Steam perceba o fim da sessão.
     setTimeout(() => {
       app.quit();
-    }, 500);
+    }, 1500);
 
     return { success: true, closing: true, deleted, deleteErrors, shutdownDiag };
   } catch (err) {

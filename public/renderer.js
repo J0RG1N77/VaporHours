@@ -1,6 +1,7 @@
-const appidInput = document.getElementById('appid');
+const gamesGrid = document.getElementById('games-grid');
 const startBtn = document.getElementById('startBtn');
 const steamStatus = document.getElementById('steamStatus');
+const libraryHint = document.getElementById('libraryHint');
 const hint = document.getElementById('hint');
 const timerEl = document.getElementById('timer');
 
@@ -9,10 +10,11 @@ let seconds = 0;
 let interval = null;
 let isRestarting = false;
 let localPlayerName = 'Nao';
+let activeGame = null;
 
 function setControlsDisabled(disabled) {
   startBtn.disabled = disabled;
-  appidInput.disabled = disabled;
+  gamesGrid.classList.toggle('is-disabled', disabled);
 }
 
 function setButtonMode(isRunning) {
@@ -43,34 +45,123 @@ function stopTimer() {
   interval = null;
 }
 
+function renderGameCards(games) {
+  const safeGames = Array.isArray(games) ? games : [];
+
+  gamesGrid.innerHTML = '';
+
+  if (!safeGames.length) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'grid-empty';
+    emptyState.textContent = 'Nenhum jogo encontrado na biblioteca local';
+    gamesGrid.appendChild(emptyState);
+    libraryHint.textContent = 'Abra a Steam e verifique se sua biblioteca está disponível.';
+    startBtn.disabled = true;
+    return;
+  }
+
+  safeGames.forEach((game) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'game-card';
+    card.dataset.appId = String(game.appId);
+    card.dataset.gameName = game.name;
+
+    card.innerHTML = `
+      <img class="game-card__cover" src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appId}/library_600x900.jpg" alt="${game.name}" loading="lazy" />
+      <div class="game-card__fade"></div>
+      <div class="game-card__meta">
+        <strong class="game-card__title">${game.name}</strong>
+        <span class="game-card__appid">AppID ${game.appId}</span>
+      </div>
+    `;
+    // fallback: se a capa não carregar, usamos um SVG inline como placeholder
+    const svgPlaceholder = `data:image/svg+xml;utf8,` + encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900'>` +
+      `<rect width='100%' height='100%' fill='%23101821'/>` +
+      `<text x='50%' y='50%' font-size='20' fill='%2399a9b8' text-anchor='middle' dominant-baseline='middle'>Sem capa</text>` +
+      `</svg>`
+    );
+
+    // depois de injetar, conectamos o handler de erro
+    setTimeout(() => {
+      const img = card.querySelector('.game-card__cover');
+      if (img) {
+        img.addEventListener('error', () => {
+          img.src = svgPlaceholder;
+          img.style.objectFit = 'contain';
+        });
+      }
+    }, 0);
+
+    card.addEventListener('click', () => {
+      if (running || isRestarting) return;
+      startGame(game);
+    });
+
+    gamesGrid.appendChild(card);
+  });
+
+  libraryHint.textContent = `${safeGames.length} jogos encontrados na biblioteca Steam local.`;
+  startBtn.disabled = true;
+  gamesGrid.classList.remove('is-disabled');
+}
+
+async function loadMyGames() {
+  libraryHint.textContent = 'Carregando biblioteca Steam...';
+
+  const result = await window.vaporHours.getLibrary();
+  if (result && result.success) {
+    renderGameCards(result.games);
+    return;
+  }
+
+  const error = result && result.error ? result.error : 'sem detalhes';
+  renderGameCards([]);
+  libraryHint.textContent = `Falha ao carregar biblioteca: ${error}`;
+}
+
+async function startGame(game) {
+  if (!game || isRestarting || running) return;
+
+  activeGame = game;
+  setControlsDisabled(true);
+  hint.textContent = `Iniciando ${game.name}...`;
+
+  const data = await window.vaporHours.startFarm(String(game.appId));
+  if (data && data.success) {
+    running = true;
+    localPlayerName = data && data.diagnostics && data.diagnostics.localPlayerName
+      ? data.diagnostics.localPlayerName
+      : 'Desconhecido';
+    startBtn.textContent = 'Stop';
+    setButtonMode(true);
+    startBtn.disabled = false;
+    gamesGrid.classList.add('is-disabled');
+    hint.textContent = `Farm iniciada em ${game.name}.`;
+    steamStatus.textContent = localPlayerName;
+    startTimer();
+    return;
+  }
+
+  activeGame = null;
+  const error = data && data.error ? data.error : 'sem detalhes';
+  hint.textContent = `Falha: ${error}`;
+  alert(`Falha ao iniciar: ${error}`);
+  startBtn.disabled = true;
+  gamesGrid.classList.remove('is-disabled');
+}
+
 startBtn.addEventListener('click', async () => {
   if (isRestarting) return;
 
-  const appid = appidInput.value.trim();
-
   if (!running) {
-    if (!appid) {
-      alert('Informe um AppID');
+    if (!activeGame) {
+      alert('Clique em um jogo da biblioteca para iniciar.');
       return;
     }
 
-    const data = await window.vaporHours.startFarm(appid);
-    if (data && data.success) {
-      running = true;
-      localPlayerName = data && data.diagnostics && data.diagnostics.localPlayerName
-        ? data.diagnostics.localPlayerName
-        : 'Desconhecido';
-      startBtn.textContent = 'Stop';
-      setButtonMode(true);
-      hint.textContent = 'Steam API inicializada com sucesso.';
-      steamStatus.textContent = `Steam Conectada: ${localPlayerName}`;
-      startTimer();
-      return;
-    }
-
-    const error = data && data.error ? data.error : 'sem detalhes';
-    hint.textContent = `Falha: ${error}`;
-    alert(`Falha ao iniciar: ${error}`);
+    await startGame(activeGame);
     return;
   }
 
@@ -87,6 +178,7 @@ startBtn.addEventListener('click', async () => {
   if (stop && stop.success) {
     stopTimer();
     localPlayerName = 'Nao';
+    activeGame = null;
     
     // Opcional: mostre detalhes da limpeza quando o main enviar.
     let shutdownInfo = 'Encerrando...\n\n';
@@ -123,8 +215,10 @@ startBtn.addEventListener('click', async () => {
 });
 
 window.vaporHours.onSteamStatus((ok) => {
-  steamStatus.textContent = ok ? `Steam Conectada: ${localPlayerName}` : 'Steam Conectada: Nao';
+  steamStatus.textContent = ok ? localPlayerName : 'Não';
 });
 
 setButtonMode(false);
-setControlsDisabled(false);
+startBtn.disabled = true;
+gamesGrid.classList.remove('is-disabled');
+loadMyGames();
