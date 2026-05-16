@@ -35,7 +35,7 @@
       "icon": "build/icons/mac/icon.icns"
     },
     "linux": {
-      "icon": "build/icons/png/512.png"
+      "icon": "build/icons/png/512x512.png"
     }
   }
 }

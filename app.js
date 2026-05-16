@@ -187,7 +187,7 @@ async function getSteamPersonaName(steamId) {
     throw new Error('STEAM_WEB_KEY nao configurado.');
   }
 
-  const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${encodeURIComponent(steamWebKey)}&steamids=${encodeURIComponent(steamId)}`;
+  const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${encodeURIComponent(steamWebKey)}&steamids=${encodeURIComponent(steamId)}`;
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -297,7 +297,7 @@ ipcMain.handle('get-library', async () => {
 
     const { steamId } = await getLoggedSteamContext();
 
-    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${encodeURIComponent(steamWebKey)}&steamid=${encodeURIComponent(steamId)}&format=json&include_appinfo=true&include_played_free_games=true`;
+    const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${encodeURIComponent(steamWebKey)}&steamid=${encodeURIComponent(steamId)}&format=json&include_appinfo=true&include_played_free_games=true`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -363,14 +363,8 @@ ipcMain.handle('start-farm', async (_, appid) => {
       steamworksRuntime = steamworks;
       try { diag.exports = Object.keys(steamworks); } catch (e) { diag.exports = String(e && e.message); }
 
-      // Tentativa de chamar restartAppIfNecessary (pode reiniciar o Steam/processo)
-      try {
-        if (typeof steamworks.restartAppIfNecessary === 'function') {
-          diag.restartAppIfNecessary = !!steamworks.restartAppIfNecessary(normalizedAppId);
-        }
-      } catch (e) {
-        diag.restartAppIfNecessary = `error: ${e && e.message}`;
-      }
+      // Evitamos restartAppIfNecessary para reduzir efeitos colaterais no runtime.
+      diag.restartAppIfNecessary = 'skipped';
 
       // Na versao 0.4.x a API correta e `init(appId?)`.
       if (steamworks && typeof steamworks.init === 'function') {

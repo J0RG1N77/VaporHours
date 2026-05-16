@@ -68,14 +68,32 @@ function renderGameCards(games) {
     card.dataset.appId = String(game.appId);
     card.dataset.gameName = game.name;
 
-    card.innerHTML = `
-      <img class="game-card__cover" src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appId}/library_600x900.jpg" alt="${game.name}" loading="lazy" />
-      <div class="game-card__fade"></div>
-      <div class="game-card__meta">
-        <strong class="game-card__title">${game.name}</strong>
-        <span class="game-card__appid">AppID ${game.appId}</span>
-      </div>
-    `;
+    const cover = document.createElement('img');
+    cover.className = 'game-card__cover';
+    cover.loading = 'lazy';
+    cover.alt = String(game.name || 'Jogo da biblioteca');
+    cover.src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appId}/library_600x900.jpg`;
+
+    const fade = document.createElement('div');
+    fade.className = 'game-card__fade';
+
+    const meta = document.createElement('div');
+    meta.className = 'game-card__meta';
+
+    const title = document.createElement('strong');
+    title.className = 'game-card__title';
+    title.textContent = String(game.name || 'Jogo sem nome');
+
+    const appId = document.createElement('span');
+    appId.className = 'game-card__appid';
+    appId.textContent = `AppID ${game.appId}`;
+
+    meta.appendChild(title);
+    meta.appendChild(appId);
+    card.appendChild(cover);
+    card.appendChild(fade);
+    card.appendChild(meta);
+
     // fallback: se a capa não carregar, usamos um SVG inline como placeholder
     const svgPlaceholder = `data:image/svg+xml;utf8,` + encodeURIComponent(
       `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900'>` +
@@ -84,16 +102,10 @@ function renderGameCards(games) {
       `</svg>`
     );
 
-    // depois de injetar, conectamos o handler de erro
-    setTimeout(() => {
-      const img = card.querySelector('.game-card__cover');
-      if (img) {
-        img.addEventListener('error', () => {
-          img.src = svgPlaceholder;
-          img.style.objectFit = 'contain';
-        });
-      }
-    }, 0);
+    cover.addEventListener('error', () => {
+      cover.src = svgPlaceholder;
+      cover.style.objectFit = 'contain';
+    });
 
     card.addEventListener('click', () => {
       if (running || isRestarting) return;
