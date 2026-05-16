@@ -23,6 +23,17 @@ function setButtonMode(isRunning) {
   startBtn.classList.add(isRunning ? 'btn-stop' : 'btn-start');
 }
 
+function refreshStartButtonState() {
+  // Enquanto o farm está ativo, o botão precisa permanecer habilitado para permitir Stop.
+  if (running) {
+    startBtn.disabled = false;
+    return;
+  }
+
+  // Fora do estado de farm, o botão só fica habilitado quando houver uma ação válida.
+  startBtn.disabled = isRestarting || !activeGame;
+}
+
 function formatTime(s) {
   const h = String(Math.floor(s / 3600)).padStart(2, '0');
   const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
@@ -116,8 +127,8 @@ function renderGameCards(games) {
   });
 
   libraryHint.textContent = `${safeGames.length} jogos encontrados na biblioteca Steam local.`;
-  startBtn.disabled = true;
   gamesGrid.classList.remove('is-disabled');
+  refreshStartButtonState();
 }
 
 let allGamesCache = [];
@@ -207,7 +218,7 @@ async function startGame(game) {
       : 'Desconhecido';
     startBtn.textContent = 'Stop';
     setButtonMode(true);
-    startBtn.disabled = false;
+    refreshStartButtonState();
     gamesGrid.classList.add('is-disabled');
     hint.textContent = `Farm iniciada em ${game.name}.`;
     steamStatus.textContent = localPlayerName;
@@ -219,7 +230,7 @@ async function startGame(game) {
   const error = data && data.error ? data.error : 'sem detalhes';
   hint.textContent = `Falha: ${error}`;
   alert(`Falha ao iniciar: ${error}`);
-  startBtn.disabled = true;
+  refreshStartButtonState();
   gamesGrid.classList.remove('is-disabled');
 }
 
@@ -262,6 +273,7 @@ startBtn.addEventListener('click', async () => {
   setButtonMode(false);
   startBtn.textContent = 'Start';
   hint.textContent = `Falha ao parar: ${stopError}`;
+  refreshStartButtonState();
 });
 
 window.vaporHours.onSteamStatus((ok) => {
@@ -269,7 +281,7 @@ window.vaporHours.onSteamStatus((ok) => {
 });
 
 setButtonMode(false);
-startBtn.disabled = true;
+refreshStartButtonState();
 gamesGrid.classList.remove('is-disabled');
 loadMyGames();
 loadSteamUser();
