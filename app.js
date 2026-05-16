@@ -1,8 +1,13 @@
-require('dotenv').config();
-
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+const dotenv = require('dotenv');
+const envPath = app.isPackaged
+  ? path.join(process.resourcesPath, '.env')
+  : path.join(__dirname, '.env');
+
+dotenv.config({ path: envPath });
 
 let mainWindow;
 let loggedSteamContext = null;
