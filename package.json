@@ -1,5 +1,5 @@
 {
-  "name": "vaporhours",
+  "name": "VaporHours",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -29,6 +29,7 @@
       "output": "dist"
     },
     "win": {
+      "target": "nsis",
       "icon": "build/icons/win/icon.ico"
     },
     "mac": {
