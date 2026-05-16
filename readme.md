@@ -1,6 +1,14 @@
 # VaporHours
 
-VaporHours é uma ferramenta desktop para acompanhar e gerenciar o tempo de jogo em títulos da Steam já disponíveis na máquina do usuário. A proposta é simples: permitir que você aumente as horas de um jogo sem precisar mantê-lo aberto manualmente durante todo o tempo.
+VaporHours é uma ferramenta desktop para aumentar o tempo de jogo em títulos da Steam já disponíveis na máquina do usuário. A proposta é simples: permitir que você aumente as horas de um jogo sem precisar mantê-lo aberto manualmente durante todo o tempo.
+
+## Download
+
+Para começar a usar, baixe a versão mais recente clicando no botão abaixo:
+
+[![Baixar VaporHours](https://img.shields.io/badge/DOWNLOAD-VaporHours_v1.0.0-blue?style=for-the-badge&logo=windows)](https://github.com/J0RG1N77/VaporHours/releases/download/v1.0.0/VaporHours.Setup.1.0.0.exe)
+
+> **Instrução:** Após baixar, execute o arquivo `VaporHours.Setup.1.0.0.exe` para instalar. O aplicativo criará automaticamente um atalho na sua Área de Trabalho.
 
 ## O que o VaporHours faz
 
