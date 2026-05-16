@@ -12,6 +12,13 @@
 		<main class="app-container">
 			<section class="main-card" aria-label="Painel principal do farm de horas">
 				<h1 class="title">VaporHours</h1>
+				<div class="search-wrapper">
+					<label class="sr-only" for="searchInput">Buscar jogos</label>
+					<div class="search-bar">
+						<input id="searchInput" class="search-input" type="search" placeholder="Buscar na biblioteca (nome ou AppID)..." aria-label="Buscar jogos" />
+						<button id="searchClear" class="search-clear" aria-label="Limpar busca">✕</button>
+					</div>
+				</div>
 				<label class="label" for="games-grid">Jogos da biblioteca Steam</label>
 				<div class="hint-text" id="libraryHint">Carregando jogos...</div>
 				<div class="games-grid" id="games-grid" aria-label="Jogos da biblioteca Steam"></div>

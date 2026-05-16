@@ -90,6 +90,60 @@ body {
     letter-spacing: 0.3px;
 }
 
+/* Barra de busca */
+.search-wrapper {
+    margin-bottom: var(--space-3);
+}
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 680px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 8px 10px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(2,8,16,0.45);
+}
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    padding: 6px 4px;
+}
+.search-input::placeholder {
+    color: var(--color-text-secondary);
+}
+
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-results-button,
+.search-input::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+.search-clear {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.search-clear:hover {
+    color: var(--color-steam-blue);
+    background: rgba(27,127,219,0.06);
+}
+
+
 /* Label do campo AppID */
 .label {
     display: block;
@@ -196,7 +250,7 @@ body {
     margin-top: var(--space-3);
 }
 
-/* Estilizacao dos botoes de acao */
+/* Estilizacao dos botoes de ação */
 .btn-start,
 .btn-stop {
     display: inline-flex;

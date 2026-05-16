@@ -108,18 +108,59 @@ function renderGameCards(games) {
   gamesGrid.classList.remove('is-disabled');
 }
 
+let allGamesCache = [];
+
+function applySearchFilter(query) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return allGamesCache.slice();
+
+  return allGamesCache.filter((g) => {
+    const name = String(g.name || '').toLowerCase();
+    const id = String(g.appId || '');
+    return name.includes(q) || id.includes(q);
+  });
+}
+
 async function loadMyGames() {
   libraryHint.textContent = 'Carregando biblioteca Steam...';
 
   const result = await window.vaporHours.getLibrary();
   if (result && result.success) {
-    renderGameCards(result.games);
+    allGamesCache = Array.isArray(result.games) ? result.games : [];
+    renderGameCards(allGamesCache.slice());
     return;
   }
 
   const error = result && result.error ? result.error : 'sem detalhes';
+  allGamesCache = [];
   renderGameCards([]);
   libraryHint.textContent = `Falha ao carregar biblioteca: ${error}`;
+}
+
+// Busca: debounce simples
+let searchTimeout = null;
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+
+function doSearch(q) {
+  const filtered = applySearchFilter(q);
+  renderGameCards(filtered);
+}
+
+if (searchInput) {
+  searchInput.addEventListener('input', (e) => {
+    const v = e.target.value || '';
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => doSearch(v), 180);
+  });
+}
+
+if (searchClear) {
+  searchClear.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    doSearch('');
+    if (searchInput) searchInput.focus();
+  });
 }
 
 async function loadSteamUser() {
