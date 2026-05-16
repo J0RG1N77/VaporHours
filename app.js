@@ -10,7 +10,14 @@ let loggedSteamContextPromise = null;
 let steamworksRuntime = null;
 
 function createWindow() {
+  // Seleciona o ícone apropriado por plataforma a partir dos ícones gerados em build/icons
+  const defaultIcon = (process.platform === 'win32')
+    ? path.join(__dirname, 'build', 'icons', 'win', 'icon.ico')
+    : (process.platform === 'darwin')
+      ? path.join(__dirname, 'build', 'icons', 'mac', 'icon.icns')
+      : path.join(__dirname, 'build', 'icons', 'png', '512x512.png');
   mainWindow = new BrowserWindow({
+    icon: defaultIcon,
     width: 1440,
     height: 900,
     minWidth: 1100,
@@ -31,6 +38,16 @@ function createWindow() {
 
 app.whenReady().then(() => {
   primeLoggedSteamContext().catch(() => {});
+  // No Windows, define um AppUserModelId para associar o ícone ao
+  // atalho/tarefa do sistema. Ajuste se tiver um AppID reverso próprio.
+  if (process.platform === 'win32') {
+    try {
+      app.setAppUserModelId('com.vaporhours.VaporHours');
+    } catch (e) {
+      console.warn('Falha ao setar AppUserModelId:', e && e.message ? e.message : e);
+    }
+  }
+
   createWindow();
 
   app.on('activate', function () {

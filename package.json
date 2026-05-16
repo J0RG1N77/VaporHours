@@ -4,7 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,23 @@
     "steamworks.js": "^0.4.0"
   },
   "devDependencies": {
+    "electron-builder": "^26.8.1",
+    "electron-icon-maker": "^0.0.5",
     "electron-rebuild": "^3.2.9"
+  },
+  "build": {
+    "appId": "com.vaporhours.VaporHours",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icons/win/icon.ico"
+    },
+    "mac": {
+      "icon": "build/icons/mac/icon.icns"
+    },
+    "linux": {
+      "icon": "build/icons/png/512.png"
+    }
   }
 }
